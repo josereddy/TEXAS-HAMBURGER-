@@ -1,1 +1,8 @@
-
+here docker-compose.yml is used once all the images are created to run the application 
+As all the images are available in the Docker hub public repository just
+use the docker-compose up command in the folder where the docker-compose file is present
+And we can connect mongodb on 27017 and 5432 port for postgres i recommend to go with mongodb compass and Dbeaver 
+And also we have 8081 ports for Location and 8082 for Menus and 8083 for Reservation Micor services running and we can use below url for accessing the Swagger ui for tetsing 
+http://localhost:8081/swagger-ui/index.html#/     for LOCATION MICROSERVICE API            
+http://localhost:8082/swagger-ui/index.html#/     for MENUS MICROSERVICE API
+http://localhost:8082/swagger-ui/index.html#/     for RESERVATION MICROSERVICE API
