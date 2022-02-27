@@ -1,0 +1,124 @@
+version: '3'
+services:
+
+  psql:
+        image: postgres
+        ports:
+          - "5432:5432"
+        restart: always
+        environment:
+          POSTGRES_PASSWORD: password
+        networks:
+          - first_network
+        volumes:
+          - postgres:/var/lib/postgresql/data
+        container_name: psql
+
+
+  mongodb:
+        image: mongo
+        ports:
+          - "27017:27017"
+        restart: always
+        volumes:
+          - mongodgvol:/data/db
+        container_name: mongodb
+        networks:
+          - first_network
+
+
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+     - first_network
+
+
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL_SAME_HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL_SAME_HOST://127.0.0.1:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL_SAME_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CREATE_TOPICS: "RESERVATIONS:1:1"
+    networks:
+      -  first_network
+    depends_on:
+      - zookeeper
+
+
+  reservation:
+        container_name: reservation
+        ports:
+          - "8083:8083"
+        environment:
+           DPSQL_HOSTNAME: psql
+           DBOOT_NAME: kafka
+           KAFKA-IP: 29092
+           MONGODB_HOSTNAME: mongodb
+           MENUS_SERVER: menus
+        restart: always
+        image: jose737vijay/reservation
+        networks:
+          -  first_network
+        depends_on:
+          - psql
+          - zookeeper
+          - kafka
+          - mongodb
+          - menus
+
+
+  menus:
+       ports:
+         - "8082:8082"
+       container_name: menus
+       environment:
+         DPSQL_HOSTNAME: psql
+         MONGODB_HOSTNAME: mongodb
+         LOCATION_SERVER: location
+         RESERVATION_SERVER: reservation
+       restart: always
+       image: jose737vijay/menus
+       networks:
+         -  first_network
+       depends_on:
+         - psql
+         - mongodb
+       links:
+         - mongodb
+
+
+  location:
+      container_name: location
+      ports:
+        - "8081:8081"
+      environment:
+        DPSQL_HOSTNAME: psql
+        MONGODB_HOSTNAME: mongodb
+        MENUS_SERVER: menus
+      restart: always
+      image: jose737vijay/location:final
+      networks:
+        -  first_network
+      depends_on:
+        - psql
+        - mongodb
+      links:
+        - mongodb
+
+
+
+networks:
+    first_network:
+
+volumes:
+    postgres:
+    mongodgvol:
